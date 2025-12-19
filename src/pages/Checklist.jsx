@@ -8,7 +8,7 @@ const notoSansKR = "Noto Sans KR";
 
 export default function ChecklistPage() {
   const navigate = useNavigate();
-  // checklists로 해당 리스트 설정 ( id, title, description, members, itemCount, createdAt (추후 설정은 userid 추가해서 디비 차별성 넣어야 할 수도 있음 ) )
+  // 백엔드 필드(체크리스트 목록): id, title, description, members, itemCount, createdAt (추후 ownerId 포함 가능)
   const [checklists, setChecklists] = useState([
     {
       id: "1",

@@ -10,7 +10,7 @@ export default function Home() {
   const [showNotifications, setShowNotifications] = useState(false)
   const notificationRef = useRef(null)
 
-  // 백엔드 필드(피드 게시글): id, title, author, location, likes, comments, image, tags, date.
+  // 백엔드 필드(피드 게시글): id, title, author, location, likes, comments, image, tags, date
   const travelPosts = [
     {
       id: 1,
@@ -58,7 +58,7 @@ export default function Home() {
     },
   ]
 
-  // 백엔드 필드(알림): id, type, user, message, time, read.
+  // 백엔드 필드(알림): id, type, user, message, time, read
   const notifications = [
     {
       id: 1,
@@ -105,7 +105,7 @@ export default function Home() {
       <header className="border-b border-border bg-card sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <img src="/logo.png" alt="여기저기" className="w-10 h-10 rounded-lg flex-shrink-0" />
               <span
                 className="text-xl text-foreground hidden sm:inline"
@@ -113,7 +113,7 @@ export default function Home() {
               >
                 여기저기
               </span>
-            </div>
+            </Link>
 
             {/* 검색바 */}
             <div className="hidden md:flex flex-1 max-w-sm mx-8">

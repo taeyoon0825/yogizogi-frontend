@@ -99,10 +99,12 @@ export default function ProfilePage() {
             <div className="flex-1">
               <div className="flex items-center gap-4 mb-4">
                 <h1 className="text-3xl font-bold text-foreground">{userProfile.nickname}</h1>
-                <Button variant="outline" className="gap-2 bg-transparent" size="sm">
-                  <Edit2 className="w-4 h-4" />
-                  편집
-                </Button>
+                <Link to="/profile/edit">
+                  <Button variant="outline" className="gap-2 bg-transparent" size="sm">
+                    <Edit2 className="w-4 h-4" />
+                    편집
+                  </Button>
+                </Link>
               </div>
 
               <p className="text-muted-foreground mb-6 max-w-2xl">{userProfile.bio}</p>

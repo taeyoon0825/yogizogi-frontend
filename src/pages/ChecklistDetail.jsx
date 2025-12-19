@@ -89,10 +89,7 @@ export default function ChecklistDetailPage() {
       <header className="border-b border-border bg-card sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            <Link
-              to="/checklist"
-              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
-            >
+            <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <img
                 src="/logo.png"
                 alt="여기저기"

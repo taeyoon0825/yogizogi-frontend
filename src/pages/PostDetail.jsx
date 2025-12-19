@@ -14,6 +14,7 @@ import { Card } from "@/components/ui/card";
 // 백엔드 필드(게시글 상세):
 // post: id, title, author, authorAvatar, location, date, likes, comments, image, tags, content
 // commentsList[]: id, author, avatar, content, date, likes
+// 백엔드 필드(게시글 상세): post(id, title, author, authorAvatar, location, date, likes, comments, image, tags, content), commentsList(id, author, avatar, content, date, likes)
 const postsData = {
   1: {
     id: 1,

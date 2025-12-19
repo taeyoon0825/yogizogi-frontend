@@ -83,6 +83,7 @@ export default function MapPage() {
   // 백엔드 필드(장소 API):
   // response: { success, data, error }
   // data[]: { id, name, type, lat, lng, address, description, rating }
+  // 백엔드 필드(장소 API 응답): id, name, type, lat, lng, address, description, rating
   const loadPlacesData = async (mapInstance, clustererInstance, lat, lng) => {
     setLoading(true);
     try {
