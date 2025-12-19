@@ -1,11 +1,19 @@
-import { Link } from "react-router-dom"
+import { Link, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { MapPin, Calendar, ImageIcon, Trash2, Save } from "lucide-react"
+import { useAuthStatus } from "@/hooks/useAuthStatus"
 
 const notoSansKR = "Noto Sans KR"
 
 export default function WritePage() {
-  // 백엔드 필드(게시글 작성): title, coverImage, location, dateRange, tags, content, galleryImages, allowComments.
+  const navigate = useNavigate()
+  const { isAuthed, logout } = useAuthStatus()
+
+  if (!isAuthed) {
+    navigate("/login")
+    return null
+  }
+
   return (
     <div className="min-h-screen bg-background">
       {/* 헤더 */}
@@ -26,12 +34,15 @@ export default function WritePage() {
 
             {/* 우측 버튼 */}
             <div className="flex items-center gap-2 sm:gap-4">
-              <Link to="/profile">
-                <Button variant="ghost">취소</Button>
-              </Link>
+              <Button variant="ghost" onClick={() => navigate("/profile")}>
+                취소
+              </Button>
               <Button className="bg-primary hover:bg-primary/90 gap-2">
                 <Save className="w-4 h-4" />
                 발행하기
+              </Button>
+              <Button variant="ghost" style={{ fontFamily: notoSansKR, fontWeight: 900 }} onClick={logout}>
+                로그아웃
               </Button>
             </div>
           </div>
@@ -153,4 +164,3 @@ export default function WritePage() {
     </div>
   )
 }
-
