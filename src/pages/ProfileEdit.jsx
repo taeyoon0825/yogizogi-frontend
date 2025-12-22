@@ -1,0 +1,150 @@
+import { useState } from "react"
+import { Link } from "react-router-dom"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
+import { Mail, User, Lock, CheckCircle, ShieldCheck } from "lucide-react"
+
+const notoSansKR = "Noto Sans KR"
+
+export default function ProfileEditPage() {
+  const [showVerification, setShowVerification] = useState(false)
+  // 백엔드 필드(프로필 편집): id(수정 불가), nickname, email, verificationCode, password, passwordConfirm, bio
+
+  return (
+    <div className="min-h-screen bg-gradient-to-br from-secondary via-background to-secondary flex items-center justify-center px-4 py-10">
+      <Card className="w-full max-w-2xl border-border/50 shadow-xl">
+        <div className="p-8 space-y-8">
+          <header className="space-y-3 text-center">
+            <Link to="/" className="flex items-center justify-center gap-3 hover:opacity-80 transition-opacity">
+              <img src="/logo.png" alt="여기저기 로고" className="w-12 h-12 rounded-lg" />
+              <h1
+                className="text-2xl"
+                style={{ fontFamily: notoSansKR, fontWeight: 900, transform: "translate(-7px, 1.5px)" }}
+              >
+                여기저기
+              </h1>
+            </Link>
+            <div className="space-y-1">
+              <p className="text-lg font-semibold">프로필 편집</p>
+              <p className="text-sm text-muted-foreground">아이디는 수정할 수 없으며, 이메일 인증 후 정보를 변경하세요.</p>
+            </div>
+          </header>
+
+          <form className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">아이디</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value="travel_user01"
+                    disabled
+                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-muted/60 text-foreground placeholder-muted-foreground cursor-not-allowed"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">닉네임</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="text"
+                    defaultValue="여행러미"
+                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">이메일</label>
+                <div className="flex gap-2 flex-col sm:flex-row">
+                  <div className="relative flex-1">
+                    <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                    <input
+                      type="email"
+                      defaultValue="user@yogizogi.com"
+                      className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                    />
+                  </div>
+                  <Button type="button" variant="outline" className="whitespace-nowrap" onClick={() => setShowVerification(true)}>
+                    인증
+                  </Button>
+                </div>
+                {showVerification && (
+                  <div className="flex gap-2 flex-col sm:flex-row items-start sm:items-center">
+                    <div className="relative flex-1">
+                      <ShieldCheck className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                      <input
+                        type="text"
+                        placeholder="인증번호 6자리 입력"
+                        className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                      />
+                    </div>
+                    <Button type="button" variant="secondary" className="whitespace-nowrap">
+                      확인
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">비밀번호</label>
+                <div className="relative">
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="password"
+                    placeholder="새 비밀번호"
+                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label className="text-sm font-medium text-foreground">비밀번호 확인</label>
+                <div className="relative">
+                  <CheckCircle className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <input
+                    type="password"
+                    placeholder="비밀번호 확인"
+                    className="w-full pl-10 pr-4 py-3 rounded-lg border border-border bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                  />
+                </div>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-sm font-medium text-foreground">소개</label>
+              <textarea
+                rows={3}
+                placeholder="나의 여행 스타일이나 관심사를 적어주세요."
+                className="w-full px-4 py-3 rounded-lg border border-border bg-input text-foreground placeholder-muted-foreground focus:outline-none focus:ring-2 focus:ring-primary/50 focus:border-primary"
+                defaultValue="세계 여행을 꿈꾸는 여행 블로거입니다. 현재 30개국을 다녀왔습니다."
+              />
+            </div>
+
+            <div className="flex flex-col sm:flex-row justify-end gap-3 pt-2">
+              <Button type="button" variant="outline" className="w-full sm:w-auto">
+                취소
+              </Button>
+              <Button type="button" className="w-full sm:w-auto bg-primary hover:bg-primary/90" style={{ fontFamily: notoSansKR, fontWeight: 900 }}>
+                편집 완료
+              </Button>
+            </div>
+          </form>
+
+          <div className="text-center text-sm text-muted-foreground">
+            <Link to="/profile" className="text-primary hover:underline font-medium">
+              마이페이지로 돌아가기
+            </Link>
+          </div>
+        </div>
+      </Card>
+    </div>
+  )
+}

@@ -1,4 +1,5 @@
 import { Link } from "react-router-dom"
+import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Heart, MessageCircle, MapPin, Edit2, Settings, MoreVertical } from "lucide-react"
@@ -6,50 +7,49 @@ import { Heart, MessageCircle, MapPin, Edit2, Settings, MoreVertical } from "luc
 const notoSansKR = "Noto Sans KR"
 
 export default function ProfilePage() {
-  // 백엔드 필드(프로필): nickname, bio, followers, following, trips, joinDate, image.
-  const userProfile = {
-    nickname: "여행러미",
-    bio: "세계 여행을 꿈꾸는 여행 블로거입니다. 현재 30개국을 다녀왔습니다.",
-    followers: 1234,
-    following: 567,
-    trips: 48,
-    joinDate: "2023년 3월 가입",
-    image: "/user-profile-avatar.png",
-  }
+  const [userProfile, setUserProfile] = useState(null)
+  const [myTrips, setMyTrips] = useState([])
+  const [loading, setLoading] = useState(false)
 
-  // 백엔드 필드(여행 카드): id, title, location, likes, comments, image, tags, date.
-  const myTrips = [
-    {
-      id: 1,
-      title: "서울의 숨은 카페거리",
-      location: "서울, 한국",
-      likes: 234,
-      comments: 12,
-      image: "/seoul-cafe.jpg",
-      tags: ["#카페", "#서울"],
-      date: "2일 전",
-    },
-    {
-      id: 2,
-      title: "강원도 산림욕 여행",
-      location: "강원도, 한국",
-      likes: 189,
-      comments: 8,
-      image: "/korean-mountain-forest.jpg",
-      tags: ["#산림욕", "#강원도"],
-      date: "1주 전",
-    },
-    {
-      id: 3,
-      title: "부산 해변 일몰 감상",
-      location: "부산, 한국",
-      likes: 312,
-      comments: 25,
-      image: "/busan-beach-sunset.png",
-      tags: ["#부산", "#해변"],
-      date: "2주 전",
-    },
-  ]
+  useEffect(() => {
+    const fetchProfile = async () => {
+      setLoading(true)
+      try {
+        const meRes = await fetch("/api/auth/me")
+        if (meRes.ok) {
+          const data = await meRes.json()
+          setUserProfile({
+            nickname: data.user?.nickname || "",
+            bio: data.user?.bio || "",
+            followers: data.user?.followers ?? 0,
+            following: data.user?.following ?? 0,
+            trips: data.user?.trips ?? 0,
+            joinDate: data.user?.joinDate || "",
+            image: data.user?.image || "/user-profile-avatar.png",
+          })
+        } else {
+          setUserProfile(null)
+        }
+
+        const postsRes = await fetch("/api/posts?limit=6")
+        if (postsRes.ok) {
+          const posts = await postsRes.json()
+          const list = Array.isArray(posts) ? posts : posts.items || []
+          setMyTrips(list)
+        } else {
+          setMyTrips([])
+        }
+      } catch (err) {
+        console.error("Failed to load profile", err)
+        setUserProfile(null)
+        setMyTrips([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchProfile()
+  }, [])
 
   return (
     <div className="min-h-screen bg-background">
@@ -89,8 +89,8 @@ export default function ProfilePage() {
             {/* 프로필 이미지 */}
             <div className="w-32 h-32 rounded-full bg-gradient-to-br from-primary/20 to-accent/20 flex items-center justify-center flex-shrink-0 overflow-hidden">
               <img
-                src={userProfile.image || "/placeholder.svg"}
-                alt={userProfile.nickname}
+                src={userProfile?.image || "/placeholder.svg"}
+                alt={userProfile?.nickname || "프로필"}
                 className="w-full h-full object-cover"
               />
             </div>
@@ -98,32 +98,34 @@ export default function ProfilePage() {
             {/* 프로필 정보 */}
             <div className="flex-1">
               <div className="flex items-center gap-4 mb-4">
-                <h1 className="text-3xl font-bold text-foreground">{userProfile.nickname}</h1>
-                <Button variant="outline" className="gap-2 bg-transparent" size="sm">
-                  <Edit2 className="w-4 h-4" />
-                  편집
-                </Button>
+                <h1 className="text-3xl font-bold text-foreground">{userProfile?.nickname || "사용자"}</h1>
+                <Link to="/profile/edit">
+                  <Button variant="outline" className="gap-2 bg-transparent" size="sm">
+                    <Edit2 className="w-4 h-4" />
+                    편집
+                  </Button>
+                </Link>
               </div>
 
-              <p className="text-muted-foreground mb-6 max-w-2xl">{userProfile.bio}</p>
+              <p className="text-muted-foreground mb-6 max-w-2xl">{userProfile?.bio || "소개 정보가 없습니다."}</p>
 
               {/* 통계 */}
               <div className="flex gap-8 mb-6">
                 <div>
-                  <div className="text-2xl font-bold text-primary">{userProfile.trips}</div>
+                  <div className="text-2xl font-bold text-primary">{userProfile?.trips ?? 0}</div>
                   <div className="text-sm text-muted-foreground">여행기</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-primary">{userProfile.followers.toLocaleString()}</div>
+                  <div className="text-2xl font-bold text-primary">{(userProfile?.followers ?? 0).toLocaleString()}</div>
                   <div className="text-sm text-muted-foreground">팔로워</div>
                 </div>
                 <div>
-                  <div className="text-2xl font-bold text-primary">{userProfile.following}</div>
+                  <div className="text-2xl font-bold text-primary">{userProfile?.following ?? 0}</div>
                   <div className="text-sm text-muted-foreground">팔로우 중</div>
                 </div>
               </div>
 
-              <p className="text-xs text-muted-foreground">{userProfile.joinDate}</p>
+              <p className="text-xs text-muted-foreground">{userProfile?.joinDate || ""}</p>
             </div>
           </div>
         </Card>
@@ -140,6 +142,10 @@ export default function ProfilePage() {
         </div>
 
         {/* 여행기 그리드 */}
+        {loading && <Card className="p-6 text-muted-foreground border-border/50">프로필 정보를 불러오는 중...</Card>}
+        {!loading && myTrips.length === 0 && (
+          <Card className="p-6 text-muted-foreground border-border/50">등록된 여행기가 없습니다.</Card>
+        )}
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
           {myTrips.map((trip) => (
             <Card key={trip.id} className="overflow-hidden hover:shadow-lg transition-shadow border-border/50 group">
@@ -165,7 +171,7 @@ export default function ProfilePage() {
                 </div>
 
                 <div className="flex gap-1 mb-4 flex-wrap">
-                  {trip.tags.map((tag, idx) => (
+                  {(trip.tags || []).map((tag, idx) => (
                     <span key={idx} className="text-xs bg-secondary text-primary px-2 py-1 rounded-full">
                       {tag}
                     </span>

@@ -2,31 +2,39 @@ import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Plus, Share2 } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 const notoSansKR = "Noto Sans KR";
 
 export default function ChecklistPage() {
   const navigate = useNavigate();
-  // checklists로 해당 리스트 설정 ( id, title, description, members, itemCount, createdAt (추후 설정은 userid 추가해서 디비 차별성 넣어야 할 수도 있음 ) )
-  const [checklists, setChecklists] = useState([
-    {
-      id: "1",
-      title: "제주도 여행 준비",
-      description: "2월 제주도 가족여행",
-      members: 3,
-      itemCount: 12,
-      createdAt: "2025-01-15",
-    },
-    {
-      id: "2",
-      title: "서울 출장 준비",
-      description: "3월 출장 짐 준비",
-      members: 2,
-      itemCount: 8,
-      createdAt: "2025-01-20",
-    },
-  ]);
+  // 백엔드 필드(체크리스트 목록): id, title, description, members, itemCount, createdAt (추후 ownerId 포함 가능)
+  const [checklists, setChecklists] = useState([]);
+  const [loading, setLoading] = useState(false);
+  const { isAuthed, logout } = useAuthStatus();
+
+  useEffect(() => {
+    const fetchChecklists = async () => {
+      setLoading(true);
+      try {
+        const res = await fetch("/api/checklists");
+        if (res.ok) {
+          const data = await res.json();
+          setChecklists(data.items || []);
+        } else {
+          setChecklists([]);
+        }
+      } catch (err) {
+        console.error("Failed to load checklists", err);
+        setChecklists([]);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchChecklists();
+  }, []);
 
   const handleCreateNewChecklist = () => {
     navigate("/checklist/create");
@@ -66,21 +74,42 @@ export default function ChecklistPage() {
               >
                 <Plus className="w-5 h-5" />새 체크리스트
               </Button>
-              <Link to="/profile">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hover:bg-secondary"
-                >
-                  <svg
-                    className="w-5 h-5"
-                    fill="currentColor"
-                    viewBox="0 0 24 24"
+              {isAuthed && (
+                <>
+                  <Link to="/profile">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="hover:bg-secondary"
+                    >
+                      <svg
+                        className="w-5 h-5"
+                        fill="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
+                      </svg>
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    style={{ fontFamily: notoSansKR, fontWeight: 900 }}
+                    onClick={logout}
                   >
-                    <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z" />
-                  </svg>
-                </Button>
-              </Link>
+                    로그아웃
+                  </Button>
+                </>
+              )}
+              {!isAuthed && (
+                <Link to="/login">
+                  <Button
+                    variant="ghost"
+                    style={{ fontFamily: notoSansKR, fontWeight: 900 }}
+                  >
+                    로그인
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>
@@ -102,7 +131,12 @@ export default function ChecklistPage() {
         </div>
 
         {/* 체크리스트 목록 */}
-        {checklists.length > 0 ? (
+        {loading && (
+          <Card className="p-12 text-center border-border/50 text-muted-foreground">
+            체크리스트를 불러오는 중...
+          </Card>
+        )}
+        {!loading && checklists.length > 0 ? (
           <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
             {checklists.map((checklist) => (
               <Link to={`/checklist/${checklist.id}`} key={checklist.id}>

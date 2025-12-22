@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Search, Plus, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { getAttractions } from "@/api/attractions";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 const notoSansKR = "Noto Sans KR";
 const KAKAO_MAP_KEY = import.meta.env.VITE_KAKAO_MAP_KEY;
@@ -16,6 +17,7 @@ export default function MapPage() {
   const [zoomLevel, setZoomLevel] = useState(5);
   const [loading, setLoading] = useState(false);
   const [mapLoadError, setMapLoadError] = useState(null);
+  const { isAuthed, logout } = useAuthStatus();
 
   useEffect(() => {
     if (!KAKAO_MAP_KEY) {
@@ -83,6 +85,7 @@ export default function MapPage() {
   // 백엔드 필드(장소 API):
   // response: { success, data, error }
   // data[]: { id, name, type, lat, lng, address, description, rating }
+  // 백엔드 필드(장소 API 응답): id, name, type, lat, lng, address, description, rating
   const loadPlacesData = async (mapInstance, clustererInstance, lat, lng) => {
     setLoading(true);
     try {
@@ -110,32 +113,7 @@ export default function MapPage() {
         ...(restaurantData.success ? restaurantData.data || [] : []),
       ];
 
-      const fallbackPlaces = allPlaces.length
-        ? []
-        : [
-            {
-              id: "sample-attraction",
-              name: "서울 시청",
-              type: "attraction",
-              lat: 37.5665,
-              lng: 126.978,
-              address: "서울특별시 중구 세종대로 110",
-              description: "샘플 관광지 데이터",
-              rating: 4.5,
-            },
-            {
-              id: "sample-restaurant",
-              name: "을지로 맛집",
-              type: "restaurant",
-              lat: 37.5668,
-              lng: 126.985,
-              address: "서울특별시 중구 을지로 일대",
-              description: "샘플 맛집 데이터",
-              rating: 4.3,
-            },
-          ];
-
-      const placesToRender = allPlaces.length ? allPlaces : fallbackPlaces;
+      const placesToRender = allPlaces;
 
       const newMarkers = placesToRender.map((place) => {
         const iconColor = place.type === "restaurant" ? "#FF6B6B" : "#0EA5E9";
@@ -232,23 +210,36 @@ export default function MapPage() {
                   여행기 작성
                 </Button>
               </Link>
-              <Link to="/profile">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hover:bg-secondary"
-                >
-                  <User className="w-5 h-5" />
-                </Button>
-              </Link>
-              <Link to="/login">
-                <Button
-                  variant="ghost"
-                  style={{ fontFamily: notoSansKR, fontWeight: 900 }}
-                >
-                  로그인
-                </Button>
-              </Link>
+              {isAuthed && (
+                <>
+                  <Link to="/profile">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="hover:bg-secondary"
+                    >
+                      <User className="w-5 h-5" />
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    style={{ fontFamily: notoSansKR, fontWeight: 900 }}
+                    onClick={logout}
+                  >
+                    로그아웃
+                  </Button>
+                </>
+              )}
+              {!isAuthed && (
+                <Link to="/login">
+                  <Button
+                    variant="ghost"
+                    style={{ fontFamily: notoSansKR, fontWeight: 900 }}
+                  >
+                    로그인
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
         </div>

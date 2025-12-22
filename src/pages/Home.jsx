@@ -3,90 +3,50 @@ import { Bell, Heart, MessageCircle, MapPin, Search, Plus, User } from "lucide-r
 import { Link } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { useAuthStatus } from "@/hooks/useAuthStatus"
 
 const notoSansKR = "Noto Sans KR"
 
 export default function Home() {
   const [showNotifications, setShowNotifications] = useState(false)
   const notificationRef = useRef(null)
-
-  // 백엔드 필드(피드 게시글): id, title, author, location, likes, comments, image, tags, date.
-  const travelPosts = [
-    {
-      id: 1,
-      title: "서울의 숨은 카페거리",
-      author: "여행러미",
-      location: "서울, 한국",
-      likes: 234,
-      comments: 12,
-      image: "/seoul-cafe.jpg",
-      tags: ["#카페", "#서울"],
-      date: "2일 전",
-    },
-    {
-      id: 2,
-      title: "유럽 배낭여행 3주의 기록",
-      author: "지구여행자",
-      location: "프랑스, 이탈리아",
-      likes: 567,
-      comments: 45,
-      image: "/european-travel.jpg",
-      tags: ["#유럽", "#배낭여행"],
-      date: "1주 전",
-    },
-    {
-      id: 3,
-      title: "제주도의 자연 속으로",
-      author: "자연러버",
-      location: "제주도, 한국",
-      likes: 389,
-      comments: 28,
-      image: "/jeju-nature.jpg",
-      tags: ["#제주", "#자연"],
-      date: "3일 전",
-    },
-    {
-      id: 4,
-      title: "도쿄 야경 산책",
-      author: "도시탐험",
-      location: "일본, 도쿄",
-      likes: 445,
-      comments: 32,
-      image: "/tokyo-night.jpg",
-      tags: ["#도쿄", "#일본"],
-      date: "5일 전",
-    },
-  ]
-
-  // 백엔드 필드(알림): id, type, user, message, time, read.
-  const notifications = [
-    {
-      id: 1,
-      type: "like",
-      user: "여행러 A",
-      message: "님이 회원님의 게시물에 좋아요를 눌렀어요.",
-      time: "방금 전",
-      read: false,
-    },
-    {
-      id: 2,
-      type: "comment",
-      user: "프라하에긍",
-      message: "님이 회원님의 게시글에 댓글을 남겼어요.",
-      time: "1시간 전",
-      read: false,
-    },
-    {
-      id: 3,
-      type: "reply",
-      user: "첫두여행",
-      message: "님이 회원님이 남긴 댓글에 답글을 달았어요.",
-      time: "어제",
-      read: true,
-    },
-  ]
+  const [travelPosts, setTravelPosts] = useState([])
+  const [notifications, setNotifications] = useState([])
+  const [loading, setLoading] = useState(false)
+  const { isAuthed, logout } = useAuthStatus()
 
   const unreadCount = notifications.filter((n) => !n.read).length
+
+  useEffect(() => {
+    const fetchData = async () => {
+      setLoading(true)
+      try {
+        const feedRes = await fetch("/api/feed")
+        if (feedRes.ok) {
+          const data = await feedRes.json()
+          setTravelPosts(data.items || [])
+        } else {
+          setTravelPosts([])
+        }
+
+        const notifRes = await fetch("/api/notifications")
+        if (notifRes.ok) {
+          const data = await notifRes.json()
+          setNotifications(data.items || [])
+        } else {
+          setNotifications([])
+        }
+      } catch (err) {
+        console.error("Failed to load feed/notifications", err)
+        setTravelPosts([])
+        setNotifications([])
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchData()
+  }, [])
 
   useEffect(() => {
     const handleClickOutside = (event) => {
@@ -105,7 +65,7 @@ export default function Home() {
       <header className="border-b border-border bg-card sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <Link to="/" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
               <img src="/logo.png" alt="여기저기" className="w-10 h-10 rounded-lg flex-shrink-0" />
               <span
                 className="text-xl text-foreground hidden sm:inline"
@@ -113,7 +73,7 @@ export default function Home() {
               >
                 여기저기
               </span>
-            </div>
+            </Link>
 
             {/* 검색바 */}
             <div className="hidden md:flex flex-1 max-w-sm mx-8">
@@ -186,16 +146,29 @@ export default function Home() {
                   </div>
                 )}
               </div>
-              <Link to="/profile">
-                <Button variant="ghost" size="icon" className="hover:bg-secondary">
-                  <User className="w-5 h-5" />
-                </Button>
-              </Link>
-              <Link to="/login">
-                <Button variant="ghost" style={{ fontFamily: notoSansKR, fontWeight: 900 }}>
-                  로그인
-                </Button>
-              </Link>
+              {isAuthed && (
+                <>
+                  <Link to="/profile">
+                    <Button variant="ghost" size="icon" className="hover:bg-secondary">
+                      <User className="w-5 h-5" />
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    style={{ fontFamily: notoSansKR, fontWeight: 900 }}
+                    onClick={logout}
+                  >
+                    로그아웃
+                  </Button>
+                </>
+              )}
+              {!isAuthed && (
+                <Link to="/login">
+                  <Button variant="ghost" style={{ fontFamily: notoSansKR, fontWeight: 900 }}>
+                    로그인
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
 
@@ -242,6 +215,12 @@ export default function Home() {
 
         {/* 여행기 그리드 */}
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+          {loading && (
+            <Card className="p-6 border-border/50 text-muted-foreground">피드를 불러오는 중...</Card>
+          )}
+          {!loading && travelPosts.length === 0 && (
+            <Card className="p-6 border-border/50 text-muted-foreground">표시할 여행기가 없습니다.</Card>
+          )}
           {travelPosts.map((post) => (
             <Link to={`/post/${post.id}`} key={post.id}>
               <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group border-border/50">
