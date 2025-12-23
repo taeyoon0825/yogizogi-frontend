@@ -10,6 +10,7 @@ export function getAccessToken() {
   return window.localStorage.getItem(ACCESS_TOKEN_KEY)
 }
 
+
 export function setAccessToken(token) {
   if (typeof window === "undefined") return
   if (!token) {
@@ -29,6 +30,8 @@ async function refreshAccessToken() {
     method: "POST",
     credentials: "include",
   })
+
+  // 배포 상황일때 https 이면 refresh 토큰 Secure 옵션 설정
 
   if (!res.ok) return null
 
