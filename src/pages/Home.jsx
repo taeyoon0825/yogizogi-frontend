@@ -1,62 +1,26 @@
-import { useEffect, useRef, useState } from "react"
-import { Bell, Heart, MessageCircle, MapPin, Search, Plus, User } from "lucide-react"
-import { Link } from "react-router-dom"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import { useEffect, useRef, useState } from "react";
+import {
+  Bell,
+  Heart,
+  MessageCircle,
+  MapPin,
+  Search,
+  Plus,
+  User,
+} from "lucide-react";
+import { Link } from "react-router-dom";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
-const notoSansKR = "Noto Sans KR"
+const notoSansKR = "Noto Sans KR";
 
 export default function Home() {
-  const [showNotifications, setShowNotifications] = useState(false)
-  const notificationRef = useRef(null)
+  const [showNotifications, setShowNotifications] = useState(false);
+  const notificationRef = useRef(null);
 
-  // 백엔드 필드(피드 게시글): id, title, author, location, likes, comments, image, tags, date.
-  const travelPosts = [
-    {
-      id: 1,
-      title: "서울의 숨은 카페거리",
-      author: "여행러미",
-      location: "서울, 한국",
-      likes: 234,
-      comments: 12,
-      image: "/seoul-cafe.jpg",
-      tags: ["#카페", "#서울"],
-      date: "2일 전",
-    },
-    {
-      id: 2,
-      title: "유럽 배낭여행 3주의 기록",
-      author: "지구여행자",
-      location: "프랑스, 이탈리아",
-      likes: 567,
-      comments: 45,
-      image: "/european-travel.jpg",
-      tags: ["#유럽", "#배낭여행"],
-      date: "1주 전",
-    },
-    {
-      id: 3,
-      title: "제주도의 자연 속으로",
-      author: "자연러버",
-      location: "제주도, 한국",
-      likes: 389,
-      comments: 28,
-      image: "/jeju-nature.jpg",
-      tags: ["#제주", "#자연"],
-      date: "3일 전",
-    },
-    {
-      id: 4,
-      title: "도쿄 야경 산책",
-      author: "도시탐험",
-      location: "일본, 도쿄",
-      likes: 445,
-      comments: 32,
-      image: "/tokyo-night.jpg",
-      tags: ["#도쿄", "#일본"],
-      date: "5일 전",
-    },
-  ]
+  // 실제 백엔드에서 불러올 게시글 목록
+  const [posts, setPosts] = useState([]);
+  const [loadingPosts, setLoadingPosts] = useState(true);
 
   // 백엔드 필드(알림): id, type, user, message, time, read.
   const notifications = [
@@ -84,20 +48,63 @@ export default function Home() {
       time: "어제",
       read: true,
     },
-  ]
+  ];
 
-  const unreadCount = notifications.filter((n) => !n.read).length
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
+  // 알림 영역 외 클릭 시 닫기
   useEffect(() => {
     const handleClickOutside = (event) => {
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
-        setShowNotifications(false)
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
+        setShowNotifications(false);
+      }
+    };
+
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  // 백엔드에서 게시글 목록 불러오기
+  useEffect(() => {
+    async function loadPosts() {
+      try {
+        const res = await fetch("/api/posts?page=1&limit=12");
+        const json = await res.json();
+
+        if (!json.success) {
+          throw new Error(json.message || "게시글 목록 조회 실패");
+        }
+
+        const mapped = (json.data || []).map((p) => ({
+          id: p.id,
+          title: p.title,
+          author: p.author_name || "작성자",
+          location: p.region || "한국",
+          likes: p.like_count ?? 0,
+          comments: p.comment_count ?? 0,
+          image:
+            p.thumbnail_url ||
+            (p.images && p.images[0] && p.images[0].image_url) ||
+            "/placeholder.svg",
+          tags: (p.tags || []).map((t) => `#${t.name}`),
+          date: p.created_at
+            ? new Date(p.created_at).toLocaleDateString("ko-KR")
+            : "",
+        }));
+
+        setPosts(mapped);
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoadingPosts(false);
       }
     }
 
-    document.addEventListener("mousedown", handleClickOutside)
-    return () => document.removeEventListener("mousedown", handleClickOutside)
-  }, [])
+    loadPosts();
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">
@@ -106,10 +113,18 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <img src="/logo.png" alt="여기저기" className="w-10 h-10 rounded-lg flex-shrink-0" />
+              <img
+                src="/logo.png"
+                alt="여기저기"
+                className="w-10 h-10 rounded-lg flex-shrink-0"
+              />
               <span
                 className="text-xl text-foreground hidden sm:inline"
-                style={{ fontFamily: notoSansKR, fontWeight: 900, transform: "translate(-7px, 1.5px)" }}
+                style={{
+                  fontFamily: notoSansKR,
+                  fontWeight: 900,
+                  transform: "translate(-7px, 1.5px)",
+                }}
               >
                 여기저기
               </span>
@@ -153,7 +168,9 @@ export default function Home() {
                 </Button>
                 {showNotifications && (
                   <div className="absolute right-0 mt-3 w-80 rounded-2xl border border-border bg-card shadow-xl overflow-hidden">
-                    <div className="px-4 py-3 font-bold text-foreground border-b border-border/60">알림</div>
+                    <div className="px-4 py-3 font-bold text-foreground border-b border-border/60">
+                      알림
+                    </div>
                     <div className="divide-y divide-border/60 max-h-80 overflow-y-auto">
                       {notifications.map((notification) => (
                         <div
@@ -169,17 +186,26 @@ export default function Home() {
                           </div>
                           <div className="flex-1">
                             <p className="text-sm text-foreground leading-relaxed">
-                              <span className="font-semibold">{notification.user}</span>{" "}
+                              <span className="font-semibold">
+                                {notification.user}
+                              </span>{" "}
                               {notification.message}
                             </p>
-                            <p className="text-xs text-muted-foreground mt-1">{notification.time}</p>
+                            <p className="text-xs text-muted-foreground mt-1">
+                              {notification.time}
+                            </p>
                           </div>
-                          {!notification.read && <span className="w-2 h-2 rounded-full bg-primary mt-2" />}
+                          {!notification.read && (
+                            <span className="w-2 h-2 rounded-full bg-primary mt-2" />
+                          )}
                         </div>
                       ))}
                     </div>
                     <div className="px-4 py-3 bg-muted/40">
-                      <Button variant="ghost" className="w-full justify-center text-primary hover:bg-secondary">
+                      <Button
+                        variant="ghost"
+                        className="w-full justify-center text-primary hover:bg-secondary"
+                      >
                         알림 모두 보기
                       </Button>
                     </div>
@@ -187,12 +213,19 @@ export default function Home() {
                 )}
               </div>
               <Link to="/profile">
-                <Button variant="ghost" size="icon" className="hover:bg-secondary">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="hover:bg-secondary"
+                >
                   <User className="w-5 h-5" />
                 </Button>
               </Link>
               <Link to="/login">
-                <Button variant="ghost" style={{ fontFamily: notoSansKR, fontWeight: 900 }}>
+                <Button
+                  variant="ghost"
+                  style={{ fontFamily: notoSansKR, fontWeight: 900 }}
+                >
                   로그인
                 </Button>
               </Link>
@@ -242,61 +275,79 @@ export default function Home() {
 
         {/* 여행기 그리드 */}
         <div className="grid gap-6 grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-          {travelPosts.map((post) => (
-            <Link to={`/post/${post.id}`} key={post.id}>
-              <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group border-border/50">
-                {/* 이미지 */}
-                <div className="relative h-48 overflow-hidden bg-secondary">
-                  <img
-                    src={post.image || "/placeholder.svg"}
-                    alt={post.title}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                  />
-                </div>
-
-                {/* 콘텐츠 */}
-                <div className="p-4">
-                  <h3 className="font-bold text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors">
-                    {post.title}
-                  </h3>
-
-                  <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
-                    <MapPin className="w-4 h-4" />
-                    <span>{post.location}</span>
+          {loadingPosts && posts.length === 0 ? (
+            <div className="col-span-full text-center text-muted-foreground">
+              게시글을 불러오는 중입니다...
+            </div>
+          ) : posts.length === 0 ? (
+            <div className="col-span-full text-center text-muted-foreground">
+              아직 등록된 여행기가 없습니다.
+            </div>
+          ) : (
+            posts.map((post) => (
+              <Link to={`/post/${post.id}`} key={post.id}>
+                <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group border-border/50">
+                  {/* 이미지 */}
+                  <div className="relative h-48 overflow-hidden bg-secondary">
+                    <img
+                      src={post.image || "/placeholder.svg"}
+                      alt={post.title}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                    />
                   </div>
 
-                  <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
-                    <span className="font-medium text-foreground/70">{post.author}</span>
-                    <span>{post.date}</span>
-                  </div>
+                  {/* 콘텐츠 */}
+                  <div className="p-4">
+                    <h3 className="font-bold text-foreground line-clamp-2 mb-2 group-hover:text-primary transition-colors">
+                      {post.title}
+                    </h3>
 
-                  <div className="flex gap-1 mb-4 flex-wrap">
-                    {post.tags.slice(0, 2).map((tag, idx) => (
-                      <span key={idx} className="text-xs bg-secondary text-primary px-2 py-1 rounded-full">
-                        {tag}
+                    <div className="flex items-center gap-1 text-sm text-muted-foreground mb-3">
+                      <MapPin className="w-4 h-4" />
+                      <span>{post.location}</span>
+                    </div>
+
+                    <div className="flex items-center justify-between text-sm text-muted-foreground mb-3">
+                      <span className="font-medium text-foreground/70">
+                        {post.author}
                       </span>
-                    ))}
-                  </div>
+                      <span>{post.date}</span>
+                    </div>
 
-                  <div className="flex items-center justify-between text-sm text-muted-foreground border-t border-border/50 pt-3">
-                    <div className="flex items-center gap-1">
-                      <Heart className="w-4 h-4" />
-                      <span>{post.likes}</span>
+                    <div className="flex gap-1 mb-4 flex-wrap">
+                      {post.tags.slice(0, 2).map((tag, idx) => (
+                        <span
+                          key={idx}
+                          className="text-xs bg-secondary text-primary px-2 py-1 rounded-full"
+                        >
+                          {tag}
+                        </span>
+                      ))}
                     </div>
-                    <div className="flex items-center gap-1">
-                      <MessageCircle className="w-4 h-4" />
-                      <span>{post.comments}</span>
+
+                    <div className="flex items-center justify-between text-sm text-muted-foreground border-t border-border/50 pt-3">
+                      <div className="flex items-center gap-1">
+                        <Heart className="w-4 h-4" />
+                        <span>{post.likes}</span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <MessageCircle className="w-4 h-4" />
+                        <span>{post.comments}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              </Card>
-            </Link>
-          ))}
+                </Card>
+              </Link>
+            ))
+          )}
         </div>
 
         {/* 더보기 버튼 */}
         <div className="flex justify-center mt-12">
-          <Button variant="outline" className="border-border hover:bg-secondary bg-transparent">
+          <Button
+            variant="outline"
+            className="border-border hover:bg-secondary bg-transparent"
+          >
             더 보기
           </Button>
         </div>
@@ -373,5 +424,5 @@ export default function Home() {
         </div>
       </footer>
     </div>
-  )
+  );
 }

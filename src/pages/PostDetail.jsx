@@ -1,3 +1,4 @@
+import { useEffect, useState } from "react";
 import {
   Heart,
   MessageCircle,
@@ -10,124 +11,60 @@ import { Link, useParams } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 
-// 예시 데이터 - 실제로는 ID로 게시글 데이터를 가져옵니다
-// 백엔드 필드(게시글 상세):
-// post: id, title, author, authorAvatar, location, date, likes, comments, image, tags, content
-// commentsList[]: id, author, avatar, content, date, likes
-const postsData = {
-  1: {
-    id: 1,
-    title: "서울의 숨은 카페거리",
-    author: "여행러미",
-    authorAvatar: "/user-profile-avatar.png",
-    location: "서울, 한국",
-    date: "2025년 1월 8일",
-    likes: 234,
-    comments: 12,
-    image: "/seoul-cafe.jpg",
-    tags: ["#카페", "#서울", "#숨은명소", "#감성"],
-    content: `서울 강남역 근처의 숨은 카페 거리를 발견했어요! 
-
-한 블록 안에 정말 감성 있는 카페들이 가득 모여있어서 놀랐습니다. 아침부터 늦은 저녁까지 각각의 시간대에 다른 분위기의 카페들을 즐길 수 있어요.
-
-첫 번째로 방문한 곳은 '라떼의 꿈' 이라는 카페였는데, 인테리어가 정말 예뻤어요. 자연채광이 잘 들어와서 사진 찍기에도 좋았고, 바리스타분이 정말 친절하셨습니다.
-
-두 번째는 빈티지 감성의 '시간의 정원' 이라는 카페. 레코드판들과 오래된 책들이 곳곳에 놓여있어서 마치 시간 여행을 하는 기분이 들었어요.
-
-서울에 사시는 분들도, 관광객분들도 꼭 한 번 방문해보세요! 정말 추천합니다!`,
-    commentsList: [
-      {
-        id: 1,
-        author: "지구여행자",
-        avatar: "/user-profile-avatar.png",
-        content: "서울 가면 꼭 들러야겠어요! 정보 감사합니다!",
-        date: "1일 전",
-        likes: 24,
-      },
-      {
-        id: 2,
-        author: "자연러버",
-        avatar: "/user-profile-avatar.png",
-        content: "우와 사진도 예쁘고 글도 잘 쓰셨네요. 저도 가봐야겠어요!",
-        date: "2시간 전",
-        likes: 12,
-      },
-    ],
-  },
-  2: {
-    id: 2,
-    title: "유럽 배낭여행 3주의 기록",
-    author: "지구여행자",
-    authorAvatar: "/user-profile-avatar.png",
-    location: "프랑스, 이탈리아",
-    date: "2025년 1월 1일",
-    likes: 567,
-    comments: 45,
-    image: "/european-travel.jpg",
-    tags: ["#유럽", "#배낭여행", "#프랑스", "#이탈리아"],
-    content: `유럽 배낭여행 3주가 정말 특별했어요!
-
-파리에서 시작해서 로마까지, 정말 많은 것을 경험했습니다. 유명한 관광지도 좋지만, 골목골목의 작은 카페와 현지인들의 일상이 가장 인상깊었어요.
-
-특히 베네치아의 골목길 산책과 로마의 야경은 평생 잊을 수 없을 것 같습니다. 혼자 여행하면서 많은 사람들을 만났고, 함께 시간을 보냈던 것들이 가장 값진 경험이 됐어요.
-
-시간과 여유가 된다면 저처럼 3주 정도 천천히 유럽을 돌아보시길 추천합니다!`,
-    commentsList: [
-      {
-        id: 1,
-        author: "여행러미",
-        avatar: "/user-profile-avatar.png",
-        content: "정말 멋진 여행이네요! 저도 언젠가 꼭 가보고 싶어요!",
-        date: "3일 전",
-        likes: 45,
-      },
-    ],
-  },
-  3: {
-    id: 3,
-    title: "제주도의 자연 속으로",
-    author: "자연러버",
-    authorAvatar: "/user-profile-avatar.png",
-    location: "제주도, 한국",
-    date: "2025년 1월 5일",
-    likes: 389,
-    comments: 28,
-    image: "/jeju-nature.jpg",
-    tags: ["#제주", "#자연", "#트래킹", "#휴식"],
-    content: `제주도에서 자연과 하나 되는 시간을 보냈어요.
-
-한라산 트래킹, 성산일출봉, 그리고 수많은 크고 작은 폭포들... 제주도는 정말 자연의 보물창고네요.
-
-이번 여행의 하이라이트는 역시 새벽 4시에 올라간 성산일출봉에서 본 일출이었습니다. 말로 표현하기 어려울 정도로 아름다웠어요.
-
-혼자만의 시간이 필요하신 분들, 자연을 사랑하시는 분들께 제주도를 정말 추천합니다!`,
-    commentsList: [],
-  },
-  4: {
-    id: 4,
-    title: "도쿄 야경 산책",
-    author: "도시탐험",
-    authorAvatar: "/user-profile-avatar.png",
-    location: "일본, 도쿄",
-    date: "2024년 12월 31일",
-    likes: 445,
-    comments: 32,
-    image: "/tokyo-night.jpg",
-    tags: ["#도쿄", "#일본", "#야경", "#도시"],
-    content: `도쿄의 밤은 정말 마법 같았어요.
-
-신주쿠, 시부야, 롯폰기... 각각의 야경이 정말 달랐습니다. 특히 도쿄 스카이트리에서 본 전망은 정말 장관이었어요.
-
-야간에만 활동하는 도시의 모습, 네온사인에 물든 거리들, 바쁜 사람들의 흐름... 모든 것이 하나의 아름다운 영화 같았습니다.
-
-도쿄를 방문하신다면 꼭 야경 산책도 해보세요!`,
-    commentsList: [],
-  },
-};
-
 export default function PostDetail() {
   const { id } = useParams();
-  const post = postsData[Number.parseInt(id || "1")] || postsData[1];
+  const [post, setPost] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadPost() {
+      try {
+        const res = await fetch(`/api/posts/${id}`);
+        const json = await res.json();
+
+        if (!json.success) {
+          throw new Error(json.message || "게시글 로딩 실패");
+        }
+
+        const p = json.data;
+
+        setPost({
+          id: p.id,
+          title: p.title,
+          author: p.author_name || p.author || "작성자",
+          authorAvatar: p.author_avatar || "/user-profile-avatar.png",
+          location: p.region || p.location || "한국",
+          date: p.created_at
+            ? new Date(p.created_at).toLocaleDateString("ko-KR")
+            : "",
+          likes: p.like_count ?? 0,
+          comments: p.comment_count ?? 0,
+          image:
+            (p.images && p.images[0] && p.images[0].image_url) ||
+            "/placeholder.svg",
+          tags: (p.tags || []).map((t) => `#${t.name}`),
+          content: p.content,
+          commentsList: [], // TODO: 댓글 API 연동 시 수정
+        });
+      } catch (error) {
+        console.error(error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    if (id) {
+      loadPost();
+    }
+  }, [id]);
+
+  if (loading || !post) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        로딩 중...
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -319,38 +256,7 @@ export default function PostDetail() {
             </div>
           </div>
 
-          {/* 추천 게시글 */}
-          <div className="border-t border-border pt-8">
-            <h2 className="text-2xl font-bold text-foreground mb-6">
-              다른 여행기
-            </h2>
-            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
-              {[1, 2].map((id) => {
-                const recPost = postsData[id];
-                return (
-                  <Link key={id} to={`/post/${id}`}>
-                    <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group border-border/50 h-full">
-                      <div className="relative h-40 overflow-hidden bg-secondary">
-                        <img
-                          src={recPost.image || "/placeholder.svg"}
-                          alt={recPost.title}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
-                        />
-                      </div>
-                      <div className="p-3">
-                        <h3 className="font-bold text-foreground line-clamp-2 mb-1 text-sm group-hover:text-primary transition-colors">
-                          {recPost.title}
-                        </h3>
-                        <p className="text-xs text-muted-foreground">
-                          {recPost.author}
-                        </p>
-                      </div>
-                    </Card>
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
+          {/* 추천 게시글 (추후 연동 예정) */}
         </article>
       </main>
 
@@ -420,7 +326,7 @@ export default function PostDetail() {
             </div>
           </div>
           <div className="border-t border-border/50 pt-8 text-center text-sm text-muted-foreground">
-            <p>© 2025 여기저기. 모든 권리 보유.</p>
+            <p>© 2025 Yogizogi. All rights reserved.</p>
           </div>
         </div>
       </footer>
