@@ -15,6 +15,9 @@ export default function PostDetail() {
   const { id } = useParams();
   const [post, setPost] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [likeCount, setLikeCount] = useState(0);
+  const [isLiked, setIsLiked] = useState(false); // TODO: 실제 로그인 유저 기준으로 교체
+  const [likeLoading, setLikeLoading] = useState(false);
 
   useEffect(() => {
     async function loadPost() {
@@ -37,7 +40,6 @@ export default function PostDetail() {
           date: p.created_at
             ? new Date(p.created_at).toLocaleDateString("ko-KR")
             : "",
-          likes: p.like_count ?? 0,
           comments: p.comment_count ?? 0,
           image:
             (p.images && p.images[0] && p.images[0].image_url) ||
@@ -46,6 +48,7 @@ export default function PostDetail() {
           content: p.content,
           commentsList: [], // TODO: 댓글 API 연동 시 수정
         });
+        setLikeCount(p.like_count ?? 0);
       } catch (error) {
         console.error(error);
       } finally {
@@ -57,6 +60,37 @@ export default function PostDetail() {
       loadPost();
     }
   }, [id]);
+
+  const handleToggleLike = async () => {
+    if (!post || likeLoading) return;
+
+    setLikeLoading(true);
+    try {
+      const method = isLiked ? "DELETE" : "POST";
+      const res = await fetch(`/api/posts/${post.id}/likes`, {
+        method,
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          userId: 1, // TODO: 실제 로그인한 유저 ID로 교체
+        }),
+      });
+
+      const json = await res.json();
+      if (!json.success) {
+        throw new Error(json.message || "좋아요 처리에 실패했습니다.");
+      }
+
+      const nextCount = json.data?.likeCount ?? likeCount;
+      setLikeCount(nextCount);
+      setIsLiked(!isLiked);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLikeLoading(false);
+    }
+  };
 
   if (loading || !post) {
     return (
@@ -163,9 +197,20 @@ export default function PostDetail() {
           {/* 상호작용 버튼 */}
           <div className="border-y border-border py-6 mb-8">
             <div className="flex items-center gap-4">
-              <Button className="flex items-center gap-2 bg-primary hover:bg-primary/90">
-                <Heart className="w-5 h-5" />
-                <span>{post.likes}</span>
+              <Button
+                className={`flex items-center gap-2 ${
+                  isLiked
+                    ? "bg-red-500 hover:bg-red-600"
+                    : "bg-primary hover:bg-primary/90"
+                }`}
+                onClick={handleToggleLike}
+                disabled={likeLoading}
+              >
+                <Heart
+                  className="w-5 h-5"
+                  fill={isLiked ? "currentColor" : "none"}
+                />
+                <span>{likeCount}</span>
               </Button>
               <Button
                 variant="outline"
