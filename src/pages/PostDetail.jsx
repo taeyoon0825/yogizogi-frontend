@@ -62,7 +62,9 @@ export default function PostDetail() {
         // 사용자가 좋아요 눌렀는지 확인 (임시로 userId: 1 사용)
         const userId = 1; // TODO: 실제 로그인 유저 ID로 교체
         try {
-          const likeRes = await fetch(`/api/posts/${id}/likes?userId=${userId}`);
+          const likeRes = await fetch(
+            `/api/posts/${id}/likes?userId=${userId}`
+          );
           const likeJson = await likeRes.json();
           if (likeJson.success && likeJson.data.isLiked !== undefined) {
             setIsLiked(likeJson.data.isLiked);
@@ -482,7 +484,9 @@ export default function PostDetail() {
                 </Link>
               ))}
               {recommendations.length === 0 && (
-                <Card className="p-4 border-border/50 text-muted-foreground">추천할 게시글이 없습니다.</Card>
+                <Card className="p-4 border-border/50 text-muted-foreground">
+                  추천할 게시글이 없습니다.
+                </Card>
               )}
             </div>
           </div>

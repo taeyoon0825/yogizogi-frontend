@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, ImageIcon, Trash2, Save } from "lucide-react";
@@ -20,8 +20,15 @@ export default function WritePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
+  // 인증 체크
+  useEffect(() => {
+    if (!isAuthed) {
+      navigate("/login");
+    }
+  }, [isAuthed, navigate]);
+
+  // 인증되지 않았으면 아무것도 렌더링하지 않음
   if (!isAuthed) {
-    navigate("/login");
     return null;
   }
 
