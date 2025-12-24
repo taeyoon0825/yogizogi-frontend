@@ -16,6 +16,7 @@ import { Card } from "@/components/ui/card";
 export default function PostDetail() {
   const { id } = useParams();
   const [post, setPost] = useState(null);
+  const [recommendations, setRecommendations] = useState([]);
   const [loading, setLoading] = useState(true);
   const [likeCount, setLikeCount] = useState(0);
   const [isLiked, setIsLiked] = useState(false); // TODO: 실제 로그인 유저 기준으로 교체
@@ -57,6 +58,45 @@ export default function PostDetail() {
         setLikeCount(p.like_count ?? 0);
         // 태그 목록 저장 (id 포함)
         setTags(p.tags || []);
+
+        // 사용자가 좋아요 눌렀는지 확인 (임시로 userId: 1 사용)
+        const userId = 1; // TODO: 실제 로그인 유저 ID로 교체
+        try {
+          const likeRes = await fetch(`/api/posts/${id}/likes?userId=${userId}`);
+          const likeJson = await likeRes.json();
+          if (likeJson.success && likeJson.data.isLiked !== undefined) {
+            setIsLiked(likeJson.data.isLiked);
+          }
+        } catch (error) {
+          console.error("좋아요 상태 확인 실패:", error);
+        }
+
+        // 추천 게시글 불러오기
+        try {
+          const recRes = await fetch(`/api/posts?limit=2`);
+          if (recRes.ok) {
+            const recJson = await recRes.json();
+            if (recJson.success) {
+              const list = recJson.data || [];
+              setRecommendations(
+                list
+                  .filter((p) => String(p.id) !== String(id))
+                  .slice(0, 2)
+                  .map((p) => ({
+                    id: p.id,
+                    title: p.title,
+                    author: p.author_name || "작성자",
+                    image:
+                      p.thumbnail_url ||
+                      (p.images && p.images[0] && p.images[0].image_url) ||
+                      "/placeholder.svg",
+                  }))
+              );
+            }
+          }
+        } catch (error) {
+          console.error("추천 게시글 로딩 실패:", error);
+        }
       } catch (error) {
         console.error(error);
       } finally {
@@ -341,7 +381,7 @@ export default function PostDetail() {
           {/* 댓글 섹션 */}
           <div className="mb-8">
             <h2 className="text-2xl font-bold text-foreground mb-6">
-              댓글 ({post.comments})
+              댓글 ({post.comments || (post.commentsList?.length ?? 0)})
             </h2>
 
             {/* 댓글 입력 */}
@@ -369,8 +409,8 @@ export default function PostDetail() {
 
             {/* 댓글 목록 */}
             <div className="space-y-4">
-              {post.commentsList.length > 0 ? (
-                post.commentsList.map((comment) => (
+              {(post.commentsList || []).length > 0 ? (
+                (post.commentsList || []).map((comment) => (
                   <Card key={comment.id} className="p-4 border-border/50">
                     <div className="flex gap-3">
                       <img
@@ -414,7 +454,38 @@ export default function PostDetail() {
             </div>
           </div>
 
-          {/* 추천 게시글 (추후 연동 예정) */}
+          {/* 추천 게시글 */}
+          <div className="border-t border-border pt-8">
+            <h2 className="text-2xl font-bold text-foreground mb-6">
+              다른 여행기
+            </h2>
+            <div className="grid gap-4 grid-cols-1 md:grid-cols-2">
+              {recommendations.map((recPost) => (
+                <Link key={recPost.id} to={`/post/${recPost.id}`}>
+                  <Card className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer group border-border/50 h-full">
+                    <div className="relative h-40 overflow-hidden bg-secondary">
+                      <img
+                        src={recPost.image || "/placeholder.svg"}
+                        alt={recPost.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300"
+                      />
+                    </div>
+                    <div className="p-3">
+                      <h3 className="font-bold text-foreground line-clamp-2 mb-1 text-sm group-hover:text-primary transition-colors">
+                        {recPost.title}
+                      </h3>
+                      <p className="text-xs text-muted-foreground">
+                        {recPost.author}
+                      </p>
+                    </div>
+                  </Card>
+                </Link>
+              ))}
+              {recommendations.length === 0 && (
+                <Card className="p-4 border-border/50 text-muted-foreground">추천할 게시글이 없습니다.</Card>
+              )}
+            </div>
+          </div>
         </article>
       </main>
 

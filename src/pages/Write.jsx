@@ -2,10 +2,14 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, ImageIcon, Trash2, Save } from "lucide-react";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 const notoSansKR = "Noto Sans KR";
 
 export default function WritePage() {
+  const navigate = useNavigate();
+  const { isAuthed } = useAuthStatus();
+
   // 폼 상태
   const [title, setTitle] = useState("");
   const [location, setLocation] = useState("");
@@ -16,7 +20,10 @@ export default function WritePage() {
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  const navigate = useNavigate();
+  if (!isAuthed) {
+    navigate("/login");
+    return null;
+  }
 
   const handleSubmit = async () => {
     if (!title || !content || !location) {
@@ -82,7 +89,6 @@ export default function WritePage() {
     }
   };
 
-  // 백엔드 필드(게시글 작성): title, region(location), start_date/end_date, tags, content
   return (
     <div className="min-h-screen bg-background">
       {/* 헤더 */}

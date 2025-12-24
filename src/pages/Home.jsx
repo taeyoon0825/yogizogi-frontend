@@ -11,6 +11,7 @@ import {
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { useAuthStatus } from "@/hooks/useAuthStatus";
 
 const notoSansKR = "Noto Sans KR";
 
@@ -21,6 +22,9 @@ export default function Home() {
   // 실제 백엔드에서 불러올 게시글 목록
   const [posts, setPosts] = useState([]);
   const [loadingPosts, setLoadingPosts] = useState(true);
+  const [nextCursor, setNextCursor] = useState(null);
+  const [hasNextPage, setHasNextPage] = useState(true);
+  const loadMoreRef = useRef(null);
 
   // 백엔드 필드(알림): id, type, user, message, time, read.
   const notifications = [
@@ -50,6 +54,8 @@ export default function Home() {
     },
   ];
 
+  const { isAuthed, logout } = useAuthStatus();
+
   const unreadCount = notifications.filter((n) => !n.read).length;
 
   // 알림 영역 외 클릭 시 닫기
@@ -67,44 +73,76 @@ export default function Home() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  // 백엔드에서 게시글 목록 불러오기
-  useEffect(() => {
-    async function loadPosts() {
-      try {
-        const res = await fetch("/api/posts?page=1&limit=12");
-        const json = await res.json();
-
-        if (!json.success) {
-          throw new Error(json.message || "게시글 목록 조회 실패");
-        }
-
-        const mapped = (json.data || []).map((p) => ({
-          id: p.id,
-          title: p.title,
-          author: p.author_name || "작성자",
-          location: p.region || "한국",
-          likes: p.like_count ?? 0,
-          comments: p.comment_count ?? 0,
-          image:
-            p.thumbnail_url ||
-            (p.images && p.images[0] && p.images[0].image_url) ||
-            "/placeholder.svg",
-          tags: (p.tags || []).map((t) => `#${t.name}`),
-          date: p.created_at
-            ? new Date(p.created_at).toLocaleDateString("ko-KR")
-            : "",
-        }));
-
-        setPosts(mapped);
-      } catch (error) {
-        console.error(error);
-      } finally {
-        setLoadingPosts(false);
+  // 백엔드에서 게시글 목록 불러오기 (무한 스크롤)
+  const loadPosts = async (cursor = null) => {
+    if (!hasNextPage && cursor !== null) return;
+    setLoadingPosts(true);
+    try {
+      const query = new URLSearchParams();
+      query.append("limit", "12");
+      if (cursor) {
+        query.append("cursor", cursor);
       }
+
+      const res = await fetch(`/api/posts?${query.toString()}`);
+      const json = await res.json();
+
+      if (!json.success) {
+        throw new Error(json.message || "게시글 목록 조회 실패");
+      }
+
+      const mapped = (json.data || []).map((p) => ({
+        id: p.id,
+        title: p.title,
+        author: p.author_name || "작성자",
+        location: p.region || "한국",
+        likes: p.like_count ?? 0,
+        comments: p.comment_count ?? 0,
+        image:
+          p.thumbnail_url ||
+          (p.images && p.images[0] && p.images[0].image_url) ||
+          "/placeholder.svg",
+        tags: (p.tags || []).map((t) => `#${t.name}`),
+        date: p.created_at
+          ? new Date(p.created_at).toLocaleDateString("ko-KR")
+          : "",
+      }));
+
+      setPosts((prevPosts) => [...prevPosts, ...mapped]);
+      setHasNextPage(json.cursorPagination?.hasNextPage ?? false);
+      setNextCursor(json.cursorPagination?.nextCursor ?? null);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingPosts(false);
+    }
+  };
+
+  useEffect(() => {
+    loadPosts(); // 초기 로드
+  }, []);
+
+  // 무한 스크롤 Intersection Observer
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0].isIntersecting && hasNextPage && !loadingPosts) {
+          loadPosts(nextCursor);
+        }
+      },
+      { threshold: 1.0 }
+    );
+
+    if (loadMoreRef.current) {
+      observer.observe(loadMoreRef.current);
     }
 
-    loadPosts();
-  }, []);
+    return () => {
+      if (loadMoreRef.current) {
+        observer.unobserve(loadMoreRef.current);
+      }
+    };
+  }, [hasNextPage, loadingPosts, nextCursor]);
 
   return (
     <div className="min-h-screen bg-background">
@@ -112,7 +150,10 @@ export default function Home() {
       <header className="border-b border-border bg-card sticky top-0 z-50">
         <div className="max-w-7xl mx-auto px-4 py-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
+            <Link
+              to="/"
+              className="flex items-center gap-3 hover:opacity-80 transition-opacity"
+            >
               <img
                 src="/logo.png"
                 alt="여기저기"
@@ -128,7 +169,7 @@ export default function Home() {
               >
                 여기저기
               </span>
-            </div>
+            </Link>
 
             {/* 검색바 */}
             <div className="hidden md:flex flex-1 max-w-sm mx-8">
@@ -142,7 +183,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* 우측 버튼 - 링크로 변경 */}
+            {/* 우측 버튼 */}
             <div className="flex items-center gap-2 sm:gap-4">
               <Link to="/write">
                 <Button className="hidden sm:flex gap-2 bg-primary hover:bg-primary/90">
@@ -212,23 +253,36 @@ export default function Home() {
                   </div>
                 )}
               </div>
-              <Link to="/profile">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="hover:bg-secondary"
-                >
-                  <User className="w-5 h-5" />
-                </Button>
-              </Link>
-              <Link to="/login">
-                <Button
-                  variant="ghost"
-                  style={{ fontFamily: notoSansKR, fontWeight: 900 }}
-                >
-                  로그인
-                </Button>
-              </Link>
+              {isAuthed && (
+                <>
+                  <Link to="/profile">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="hover:bg-secondary"
+                    >
+                      <User className="w-5 h-5" />
+                    </Button>
+                  </Link>
+                  <Button
+                    variant="ghost"
+                    style={{ fontFamily: notoSansKR, fontWeight: 900 }}
+                    onClick={logout}
+                  >
+                    로그아웃
+                  </Button>
+                </>
+              )}
+              {!isAuthed && (
+                <Link to="/login">
+                  <Button
+                    variant="ghost"
+                    style={{ fontFamily: notoSansKR, fontWeight: 900 }}
+                  >
+                    로그인
+                  </Button>
+                </Link>
+              )}
             </div>
           </div>
 
@@ -342,15 +396,14 @@ export default function Home() {
           )}
         </div>
 
-        {/* 더보기 버튼 */}
-        <div className="flex justify-center mt-12">
-          <Button
-            variant="outline"
-            className="border-border hover:bg-secondary bg-transparent"
-          >
-            더 보기
-          </Button>
-        </div>
+        {/* 무한 스크롤 감지 요소 */}
+        {hasNextPage && (
+          <div ref={loadMoreRef} className="flex justify-center mt-12">
+            {loadingPosts && (
+              <p className="text-muted-foreground">더 많은 게시글 로딩 중...</p>
+            )}
+          </div>
+        )}
       </main>
 
       {/* 푸터 */}
