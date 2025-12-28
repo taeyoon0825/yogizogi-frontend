@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { MapPin, Calendar, ImageIcon, Trash2, Save } from "lucide-react";
 import { useAuthStatus } from "@/hooks/useAuthStatus";
+import { apiJson } from "@/api/client";
 
 const notoSansKR = "Noto Sans KR";
 
@@ -17,8 +18,14 @@ export default function WritePage() {
   const [tagsInput, setTagsInput] = useState("");
   const [content, setContent] = useState("");
   const [allowComments, setAllowComments] = useState(true);
+  const [images, setImages] = useState([]);
+  const [thumbnailFile, setThumbnailFile] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState("");
+  const imageInputRef = useRef(null);
+  const thumbnailInputRef = useRef(null);
+  const [imagePreviews, setImagePreviews] = useState([]);
+  const [thumbnailPreview, setThumbnailPreview] = useState("");
 
   // 인증 체크
   useEffect(() => {
@@ -26,6 +33,23 @@ export default function WritePage() {
       navigate("/login");
     }
   }, [isAuthed, navigate]);
+
+  useEffect(() => {
+    const urls = images.map((f) => URL.createObjectURL(f));
+    setImagePreviews(urls);
+    return () => urls.forEach((u) => URL.revokeObjectURL(u));
+  }, [images]);
+
+  useEffect(() => {
+    if (!thumbnailFile) {
+      setThumbnailPreview("");
+      return;
+    }
+
+    const url = URL.createObjectURL(thumbnailFile);
+    setThumbnailPreview(url);
+    return () => URL.revokeObjectURL(url);
+  }, [thumbnailFile]);
 
   // 인증되지 않았으면 아무것도 렌더링하지 않음
   if (!isAuthed) {
@@ -69,15 +93,26 @@ export default function WritePage() {
     };
 
     try {
-      const res = await fetch("/api/posts", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(body),
-      });
+      const form = new FormData();
+      form.append("author_id", "1"); // TODO: 인증 붙이면 실제 userId 사용
+      form.append("title", title);
+      form.append("content", content);
+      form.append("region", location);
+      if (start_date) form.append("start_date", start_date);
+      if (end_date) form.append("end_date", end_date);
+      form.append("tags", JSON.stringify(tags));
+      form.append("allow_comments", String(allowComments));
+      if (thumbnailFile) {
+        form.append("thumbnail", thumbnailFile);
+      }
+      for (const file of images) {
+        form.append("images", file);
+      }
 
-      const json = await res.json();
+      const json = await apiJson("/api/posts", {
+        method: "POST",
+        body: form,
+      });
       if (!json.success) {
         throw new Error(json.message || "게시글 작성에 실패했습니다.");
       }
@@ -94,6 +129,31 @@ export default function WritePage() {
     } finally {
       setSubmitting(false);
     }
+  };
+
+  const handlePickImages = (e) => {
+    const files = Array.from(e.target.files || []);
+    if (files.length === 0) return;
+
+    setImages((prev) => {
+      const next = [...prev, ...files];
+      return next.slice(0, 6);
+    });
+
+    e.target.value = "";
+  };
+
+  const removeImageAt = (index) => {
+    setImages((prev) => prev.filter((_, i) => i !== index));
+  };
+
+  const handlePickThumbnail = (e) => {
+    setThumbnailFile(e.target.files?.[0] ?? null);
+    e.target.value = "";
+  };
+
+  const clearThumbnail = () => {
+    setThumbnailFile(null);
   };
 
   return (
@@ -153,9 +213,40 @@ export default function WritePage() {
 
         {/* 썸네일 이미지 */}
         <div className="mb-8">
-          <div className="relative h-64 rounded-lg bg-secondary/50 border-2 border-dashed border-border flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-secondary/70 transition-colors group">
-            <ImageIcon className="w-12 h-12 text-muted-foreground group-hover:text-primary transition-colors" />
-            <div className="text-center">
+          <input
+            ref={thumbnailInputRef}
+            type="file"
+            accept="image/*"
+            hidden
+            onChange={handlePickThumbnail}
+          />
+          <div
+            className="relative h-64 rounded-lg bg-secondary/50 border-2 border-dashed border-border flex flex-col items-center justify-center gap-4 cursor-pointer hover:bg-secondary/70 transition-colors group overflow-hidden"
+            onClick={() => thumbnailInputRef.current?.click()}
+          >
+            {thumbnailPreview && (
+              <img
+                src={thumbnailPreview}
+                alt="thumbnail"
+                className="absolute inset-0 w-full h-full object-cover"
+              />
+            )}
+            {thumbnailPreview && (
+              <button
+                type="button"
+                className="absolute top-3 right-3 p-2 rounded-full bg-background/80 hover:bg-background border border-border z-20"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  clearThumbnail();
+                }}
+                aria-label="remove thumbnail"
+              >
+                <Trash2 className="w-4 h-4" />
+              </button>
+            )}
+
+            <ImageIcon className="w-12 h-12 text-muted-foreground group-hover:text-primary transition-colors relative z-10" />
+            <div className="text-center relative z-10">
               <p className="font-medium text-foreground mb-1">
                 썸네일 이미지를 선택하세요
               </p>
@@ -242,15 +333,45 @@ export default function WritePage() {
           <label className="block text-sm font-medium text-foreground mb-4">
             여행 사진
           </label>
+          <input
+            ref={imageInputRef}
+            type="file"
+            accept="image/*"
+            multiple
+            hidden
+            onChange={handlePickImages}
+          />
           <div className="grid grid-cols-3 md:grid-cols-4 gap-4">
-            {[1, 2, 3, 4, 5, 6].map((i) => (
+            {imagePreviews.map((src, idx) => (
               <div
-                key={i}
-                className="relative aspect-square rounded-lg bg-secondary/50 border-2 border-dashed border-border flex items-center justify-center group cursor-pointer hover:bg-secondary transition-colors"
+                key={`${src}-${idx}`}
+                className="relative aspect-square rounded-lg overflow-hidden border border-border bg-secondary"
               >
-                <ImageIcon className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
+                <img
+                  src={src}
+                  alt={`upload-${idx}`}
+                  className="w-full h-full object-cover"
+                />
+                <button
+                  type="button"
+                  className="absolute top-2 right-2 p-2 rounded-full bg-background/80 hover:bg-background border border-border"
+                  onClick={() => removeImageAt(idx)}
+                  aria-label="remove image"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
               </div>
             ))}
+
+            {images.length < 6 && (
+              <button
+                type="button"
+                className="relative aspect-square rounded-lg bg-secondary/50 border-2 border-dashed border-border flex items-center justify-center group cursor-pointer hover:bg-secondary transition-colors"
+                onClick={() => imageInputRef.current?.click()}
+              >
+                <ImageIcon className="w-6 h-6 text-muted-foreground group-hover:text-primary transition-colors" />
+              </button>
+            )}
           </div>
         </div>
 

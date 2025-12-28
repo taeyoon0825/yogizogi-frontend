@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, __dirname, "");
-  const apiTarget = env.VITE_API_TARGET || "http://localhost:4002";
+  const apiTarget = env.VITE_API_TARGET || "http://localhost:9090";
 
   return {
     root: __dirname,
@@ -22,6 +22,10 @@ export default defineConfig(({ mode }) => {
       port: 5173,
       proxy: {
         "/api": {
+          target: apiTarget,
+          changeOrigin: true,
+        },
+        "/uploads": {
           target: apiTarget,
           changeOrigin: true,
         },

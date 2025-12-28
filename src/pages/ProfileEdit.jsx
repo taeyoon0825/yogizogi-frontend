@@ -1,13 +1,56 @@
-import { useState } from "react"
-import { Link } from "react-router-dom"
+import { useEffect, useRef, useState } from "react"
+import { Link, useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Mail, User, Lock, CheckCircle, ShieldCheck } from "lucide-react"
+import { apiJson } from "@/api/client"
 
 const notoSansKR = "Noto Sans KR"
 
 export default function ProfileEditPage() {
+  const navigate = useNavigate()
   const [showVerification, setShowVerification] = useState(false)
+  const [profileImageFile, setProfileImageFile] = useState(null)
+  const [profileImagePreview, setProfileImagePreview] = useState("")
+  const [profileImageError, setProfileImageError] = useState("")
+  const [profileImageUploading, setProfileImageUploading] = useState(false)
+  const profileImageInputRef = useRef(null)
+
+  useEffect(() => {
+    if (!profileImageFile) {
+      setProfileImagePreview("")
+      return
+    }
+
+    const url = URL.createObjectURL(profileImageFile)
+    setProfileImagePreview(url)
+    return () => URL.revokeObjectURL(url)
+  }, [profileImageFile])
+
+  const uploadProfileImage = async () => {
+    if (!profileImageFile) {
+      setProfileImageError("프로필 이미지 파일을 선택해 주세요.")
+      return
+    }
+
+    setProfileImageError("")
+    setProfileImageUploading(true)
+    try {
+      const form = new FormData()
+      form.append("image", profileImageFile)
+
+      await apiJson("/api/auth/me/profile-image", {
+        method: "POST",
+        body: form,
+      })
+
+      navigate("/profile")
+    } catch (err) {
+      setProfileImageError(err instanceof Error ? err.message : "업로드에 실패했습니다.")
+    } finally {
+      setProfileImageUploading(false)
+    }
+  }
   // 백엔드 필드(프로필 편집): id(수정 불가), nickname, email, verificationCode, password, passwordConfirm, bio
 
   return (
@@ -31,6 +74,49 @@ export default function ProfileEditPage() {
           </header>
 
           <form className="space-y-6">
+            <div className="space-y-3">
+              <label className="text-sm font-medium text-foreground">프로필 사진</label>
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div className="w-20 h-20 rounded-full overflow-hidden bg-muted border border-border">
+                  <img
+                    src={profileImagePreview || "/user-profile-avatar.png"}
+                    alt="profile"
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+
+                <input
+                  ref={profileImageInputRef}
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  onChange={(e) =>
+                    setProfileImageFile(e.target.files?.[0] ?? null)
+                  }
+                />
+
+                <div className="flex gap-2">
+                  <Button
+                    type="button"
+                    variant="outline"
+                    onClick={() => profileImageInputRef.current?.click()}
+                  >
+                    선택
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={uploadProfileImage}
+                    disabled={profileImageUploading}
+                  >
+                    {profileImageUploading ? "업로드 중..." : "업로드"}
+                  </Button>
+                </div>
+              </div>
+
+              {profileImageError && (
+                <p className="text-sm text-destructive">{profileImageError}</p>
+              )}
+            </div>
             <div className="grid gap-4 md:grid-cols-2">
               <div className="space-y-2">
                 <label className="text-sm font-medium text-foreground">아이디</label>
