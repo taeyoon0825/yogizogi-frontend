@@ -24,6 +24,8 @@ export default defineConfig(({ mode }) => {
         "/api": {
           target: apiTarget,
           changeOrigin: true,
+          secure: false,
+          ws: true, // WebSocket 지원
         },
         "/uploads": {
           target: apiTarget,
