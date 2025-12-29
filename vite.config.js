@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename)
 
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, __dirname, "")
-  const apiTarget = env.VITE_API_TARGET || "http://localhost:9090"
+  const apiTarget = env.VITE_API_TARGET || "http://localhost:4000"
 
   return {
     root: __dirname,
@@ -24,6 +24,8 @@ export default defineConfig(({ mode }) => {
         "/api": {
           target: apiTarget,
           changeOrigin: true,
+          secure: false,
+          ws: true, // WebSocket 지원
         },
       },
     },
