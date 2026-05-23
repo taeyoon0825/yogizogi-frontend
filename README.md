@@ -169,6 +169,7 @@ YogiZogi는 사용자가 여행기를 작성하고 공유할 수 있는 여행�
 
 ## 🏗 아키텍처
 
+
 ```txt
 ┌─────────────────────┐
 │       React App      │
@@ -203,14 +204,19 @@ YogiZogi는 사용자가 여행기를 작성하고 공유할 수 있는 여행�
 │  Auth / Posts / Map  │
 │  Comments / Checklist│
 └─────────────────────┘
+```
 주요 설계 방식
 Page 기반 구조: 화면 단위로 페이지 컴포넌트 분리
 API 모듈 분리: 인증, 댓글, 관광지, 체크리스트 API 분리
 공통 API Client: Access Token 자동 첨부 및 401 응답 시 토큰 재발급 처리
 Protected Flow: 인증이 필요한 페이지에서 로그인 여부 확인 후 이동 처리
 Component Reuse: Button, Card 등 공용 UI 컴포넌트 활용
-🔥 핵심 구현 사항
-1. Access Token 자동 첨부 및 Refresh 처리
+
+---
+
+## 🔥 핵심 구현 사항
+## 1. Access Token 자동 첨부 및 Refresh 처리
+```
 export async function apiFetch(input, init = {}) {
   const headers = new Headers(init.headers || {})
   const token = getAccessToken()
@@ -239,13 +245,19 @@ export async function apiFetch(input, init = {}) {
     credentials: "include",
   })
 }
-포인트
-Access Token을 LocalStorage에 저장
-API 요청 시 Authorization Header 자동 추가
-401 응답 발생 시 Refresh Token으로 Access Token 재발급
-재발급 성공 시 기존 요청 재시도
-로그인/회원가입/로그아웃/토큰 재발급 API는 재시도 대상에서 제외
-2. 여행기 목록 조회 및 커서 기반 페이지네이션
+```
+
+## 포인트
+- Access Token을 LocalStorage에 저장
+- API 요청 시 Authorization Header 자동 추가
+- 401 응답 발생 시 Refresh Token으로 Access Token 재발급
+- 재발급 성공 시 기존 요청 재시도
+- 로그인/회원가입/로그아웃/토큰 재발급 API는 재시도 대상에서 제외
+
+---
+
+## 2. 여행기 목록 조회 및 커서 기반 페이지네이션
+```
 const loadPosts = async (cursor = null) => {
   const query = new URLSearchParams()
   query.append("limit", "12")
@@ -283,12 +295,19 @@ const loadPosts = async (cursor = null) => {
   setHasNextPage(json.cursorPagination?.hasNextPage ?? false)
   setNextCursor(json.cursorPagination?.nextCursor ?? null)
 }
-포인트
-limit=12 기준 게시글 목록 조회
-cursor가 없으면 초기 목록, cursor가 있으면 기존 목록에 추가
-백엔드 응답 데이터를 프론트 화면 구조에 맞게 매핑
-hasNextPage, nextCursor 값으로 더보기 버튼 제어
-3. FormData 기반 여행기 작성
+```
+
+## 포인트
+
+- limit=12 기준 게시글 목록 조회
+- cursor가 없으면 초기 목록, cursor가 있으면 기존 목록에 추가
+- 백엔드 응답 데이터를 프론트 화면 구조에 맞게 매핑
+- hasNextPage, nextCursor 값으로 더보기 버튼 제어
+
+---
+
+## 3. FormData 기반 여행기 작성
+```
 const form = new FormData()
 
 form.append("author_id", "1")
@@ -310,12 +329,17 @@ const json = await apiJson("/api/posts", {
   method: "POST",
   body: form,
 })
-포인트
-썸네일과 다중 이미지를 함께 업로드
-일반 JSON이 아닌 FormData로 게시글 작성 요청 처리
-이미지 미리보기 URL 생성 및 메모리 해제 처리
-작성 완료 후 생성된 게시글 상세 페이지로 이동
-4. 카카오맵 기반 맛집/관광지 탐색
+```
+## 포인트
+- 썸네일과 다중 이미지를 함께 업로드
+- 일반 JSON이 아닌 FormData로 게시글 작성 요청 처리
+- 이미지 미리보기 URL 생성 및 메모리 해제 처리
+- 작성 완료 후 생성된 게시글 상세 페이지로 이동
+
+---
+
+## 4. 카카오맵 기반 맛집/관광지 탐색
+```
 const KAKAO_MAP_KEY = import.meta.env.VITE_KAKAO_MAP_KEY
 
 script.src =
@@ -332,14 +356,20 @@ const clusterer = new window.kakao.maps.MarkerClusterer({
   averageCenter: true,
   minLevel: 4,
 })
-포인트
-.env에서 카카오맵 API 키 관리
-지도 SDK 동적 로딩
-맛집/관광지 데이터를 백엔드 API를 통해 조회
-장소 타입에 따라 마커 색상 구분
-MarkerClusterer로 다수 마커 관리
-줌 레벨에 따라 마커 노출 제어
-5. 댓글/답글 재귀 렌더링
+```
+
+## 포인트
+- .env에서 카카오맵 API 키 관리
+- 지도 SDK 동적 로딩
+- 맛집/관광지 데이터를 백엔드 API를 통해 조회
+- 장소 타입에 따라 마커 색상 구분
+- MarkerClusterer로 다수 마커 관리
+- 줌 레벨에 따라 마커 노출 제어
+
+---
+
+## 5. 댓글/답글 재귀 렌더링
+```
 const CommentItem = ({ comment }) => {
   return (
     <div>
@@ -355,6 +385,7 @@ const CommentItem = ({ comment }) => {
     </div>
   )
 }
+```
 포인트
 댓글과 대댓글을 동일 컴포넌트로 재귀 렌더링
 답글 작성 대상 댓글 ID 관리
