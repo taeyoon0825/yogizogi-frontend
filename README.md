@@ -167,7 +167,7 @@ YogiZogi는 사용자가 여행기를 작성하고 공유할 수 있는 여행�
 
 ---
 
-## 🏗 아키텍처
+## 🏗 **아키텍처**
 
 
 ```txt
@@ -205,17 +205,17 @@ YogiZogi는 사용자가 여행기를 작성하고 공유할 수 있는 여행�
 │  Comments / Checklist│
 └─────────────────────┘
 ```
-주요 설계 방식
-Page 기반 구조: 화면 단위로 페이지 컴포넌트 분리
-API 모듈 분리: 인증, 댓글, 관광지, 체크리스트 API 분리
-공통 API Client: Access Token 자동 첨부 및 401 응답 시 토큰 재발급 처리
-Protected Flow: 인증이 필요한 페이지에서 로그인 여부 확인 후 이동 처리
-Component Reuse: Button, Card 등 공용 UI 컴포넌트 활용
+## **주요 설계 방식**
+- Page 기반 구조: 화면 단위로 페이지 컴포넌트 분리
+- API 모듈 분리: 인증, 댓글, 관광지, 체크리스트 API 분리
+- 공통 API Client: Access Token 자동 첨부 및 401 응답 시 토큰 재발급 처리
+- Protected Flow: 인증이 필요한 페이지에서 로그인 여부 확인 후 이동 처리
+- Component Reuse: Button, Card 등 공용 UI 컴포넌트 활용
 
 ---
 
-## 🔥 핵심 구현 사항
-## 1. Access Token 자동 첨부 및 Refresh 처리
+## 🔥 **핵심 구현 사항**
+## **1. Access Token 자동 첨부 및 Refresh 처리**
 ```
 export async function apiFetch(input, init = {}) {
   const headers = new Headers(init.headers || {})
@@ -247,7 +247,7 @@ export async function apiFetch(input, init = {}) {
 }
 ```
 
-## 포인트
+## **포인트**
 - Access Token을 LocalStorage에 저장
 - API 요청 시 Authorization Header 자동 추가
 - 401 응답 발생 시 Refresh Token으로 Access Token 재발급
@@ -256,7 +256,7 @@ export async function apiFetch(input, init = {}) {
 
 ---
 
-## 2. 여행기 목록 조회 및 커서 기반 페이지네이션
+## **2. 여행기 목록 조회 및 커서 기반 페이지네이션**
 ```
 const loadPosts = async (cursor = null) => {
   const query = new URLSearchParams()
@@ -297,7 +297,7 @@ const loadPosts = async (cursor = null) => {
 }
 ```
 
-## 포인트
+## **포인트**
 
 - limit=12 기준 게시글 목록 조회
 - cursor가 없으면 초기 목록, cursor가 있으면 기존 목록에 추가
@@ -306,7 +306,7 @@ const loadPosts = async (cursor = null) => {
 
 ---
 
-## 3. FormData 기반 여행기 작성
+## **3. FormData 기반 여행기 작성**
 ```
 const form = new FormData()
 
@@ -330,7 +330,7 @@ const json = await apiJson("/api/posts", {
   body: form,
 })
 ```
-## 포인트
+## **포인트**
 - 썸네일과 다중 이미지를 함께 업로드
 - 일반 JSON이 아닌 FormData로 게시글 작성 요청 처리
 - 이미지 미리보기 URL 생성 및 메모리 해제 처리
@@ -338,7 +338,7 @@ const json = await apiJson("/api/posts", {
 
 ---
 
-## 4. 카카오맵 기반 맛집/관광지 탐색
+## **4. 카카오맵 기반 맛집/관광지 탐색**
 ```
 const KAKAO_MAP_KEY = import.meta.env.VITE_KAKAO_MAP_KEY
 
@@ -358,7 +358,7 @@ const clusterer = new window.kakao.maps.MarkerClusterer({
 })
 ```
 
-## 포인트
+## **포인트**
 - .env에서 카카오맵 API 키 관리
 - 지도 SDK 동적 로딩
 - 맛집/관광지 데이터를 백엔드 API를 통해 조회
@@ -368,7 +368,7 @@ const clusterer = new window.kakao.maps.MarkerClusterer({
 
 ---
 
-## 5. 댓글/답글 재귀 렌더링
+## **5. 댓글/답글 재귀 렌더링**
 ```
 const CommentItem = ({ comment }) => {
   return (
@@ -386,12 +386,16 @@ const CommentItem = ({ comment }) => {
   )
 }
 ```
-포인트
-댓글과 대댓글을 동일 컴포넌트로 재귀 렌더링
-답글 작성 대상 댓글 ID 관리
-답글 등록 후 댓글 목록 재조회
-댓글 작성/답글 작성 API 분리
-6. 공용 체크리스트 관리
+## **포인트**
+- 댓글과 대댓글을 동일 컴포넌트로 재귀 렌더링
+- 답글 작성 대상 댓글 ID 관리
+- 답글 등록 후 댓글 목록 재조회
+- 댓글 작성/답글 작성 API 분리
+
+---
+
+## **6. 공용 체크리스트 관리**
+```
 export async function addChecklistItem(
   checklistId,
   { name, assignedTo, quantity }
@@ -405,13 +409,17 @@ export async function addChecklistItem(
     }),
   })
 }
-포인트
-체크리스트별 준비물 관리
-담당자와 수량 입력 가능
-준비물 완료 상태 변경
-체크리스트 목록/상세/생성 API 분리
-여행 준비 협업 기능으로 확장 가능
-📁 프로젝트 구조
+```
+
+## **포인트**
+- 체크리스트별 준비물 관리
+- 담당자와 수량 입력 가능
+- 준비물 완료 상태 변경
+- 체크리스트 목록/상세/생성 API 분리
+- 여행 준비 협업 기능으로 확장 가능
+
+## 📁 **프로젝트 구조**
+```
 src
 ├── api
 │   ├── attractions.js
@@ -447,19 +455,28 @@ src
 ├── App.jsx
 ├── index.css
 └── main.jsx
-🚀 실행 방법
-사전 요구사항
-Node.js 18 이상 권장
-npm
-백엔드 API 서버 실행 필요
-Kakao Map JavaScript API Key 필요
-환경 변수 설정
+```
+## 🚀 **실행 방법**
+## **사전 요구사항**
+- Node.js 18 이상 권장
+- npm
+- 백엔드 API 서버 실행 필요
+- Kakao Map JavaScript API Key 필요
+
+--- 
+
+## **환경 변수 설정**
 
 프로젝트 루트에 .env 파일을 생성합니다.
-
+```
 VITE_API_TARGET=http://localhost:9090
 VITE_KAKAO_MAP_KEY=your_kakao_map_javascript_key
-설치 및 실행
+```
+
+--- 
+
+## **설치 및 실행**
+```
 # 프로젝트 클론
 git clone https://github.com/taeyoon0825/yogizogi-frontend.git
 
@@ -471,61 +488,81 @@ npm install
 
 # 개발 서버 실행
 npm run dev
-접속
+```
+
+## **접속**
+```
 http://localhost:5173
-빌드
+```
+
+---
+
+## 빌드
+```
 npm run build
-빌드 결과 미리보기
+```
+
+## 빌드 결과 미리보기
+```
 npm run preview
-📈 개선 사항 및 학습 포인트
-구현하면서 배운 것들
+```
 
-1. React SPA 라우팅 구조 설계
+---
 
-React Router를 활용한 페이지 라우팅
-Home, Write, Detail, Map, Checklist 등 기능별 페이지 분리
-인증 상태에 따른 페이지 접근 제어
+## 📈 개선 사항 및 학습 포인트
 
-2. 인증 API 연동
+### 구현하면서 배운 것들
 
-Access Token 저장 및 요청 Header 자동 첨부
-Refresh Token을 통한 Access Token 재발급
-로그아웃 시 토큰 제거 및 인증 상태 갱신
+**1. React SPA 라우팅 구조 설계**
 
-3. 파일 업로드 처리
+- React Router를 활용한 페이지 라우팅
+- Home, Write, Detail, Map, Checklist 등 기능별 페이지 분리
+- 인증 상태에 따른 페이지 접근 제어
 
-FormData 기반 이미지 업로드
-썸네일 이미지와 본문 이미지를 분리 관리
-업로드 전 이미지 미리보기 구현
+**2. 인증 API 연동**
 
-4. 지도 API 연동
+- Access Token 저장 및 요청 Header 자동 첨부
+- Refresh Token을 통한 Access Token 재발급
+- 로그아웃 시 토큰 제거 및 인증 상태 갱신
 
-외부 Kakao Map SDK 동적 로딩
-지도 마커 및 클러스터링 적용
-맛집/관광지 필터링 UI 구현
+**3. 파일 업로드 처리**
 
-5. 커뮤니티 기능 구현
+- FormData 기반 이미지 업로드
+- 썸네일 이미지와 본문 이미지를 분리 관리
+- 업로드 전 이미지 미리보기 구현
 
-좋아요 상태 변경
-댓글/답글 작성
-태그 추가/삭제
-추천 게시글 표시
+**4. 지도 API 연동**
 
-6. 협업 기능 확장
+- 외부 Kakao Map SDK 동적 로딩
+- 지도 마커 및 클러스터링 적용
+- 맛집/관광지 필터링 UI 구현
 
-공용 체크리스트 목록/상세 구조 구현
-준비물 담당자, 수량, 완료 상태 관리
-여행 준비 협업 기능의 기반 설계
-🔧 향후 개선 계획
-실제 로그인 사용자 ID 기반 여행기 작성 처리
-체크리스트 항목 추가/수정/삭제 API 완전 연동
-공용 체크리스트 공유 링크 기능 구현
-알림 기능 백엔드 연동
-게시글 검색 기능 고도화
-인기/최신/태그별 필터링 기능 추가
-지도 현재 위치 기반 검색 기능 추가
-여행기 이미지 드래그 앤 드롭 업로드 개선
-반응형 UI 디테일 개선
-API 에러 처리 공통화
-로딩/스켈레톤 UI 적용
-배포 환경 설정 및 CI/CD 구성
+**5. 커뮤니티 기능 구현**
+
+- 좋아요 상태 변경
+- 댓글/답글 작성
+- 태그 추가/삭제
+- 추천 게시글 표시
+
+**6. 협업 기능 확장**
+
+- 공용 체크리스트 목록/상세 구조 구현
+- 준비물 담당자, 수량, 완료 상태 관리
+- 여행 준비 협업 기능의 기반 설계
+
+---
+
+## 🔧 **향후 개선 계획**
+
+- 실제 로그인 사용자 ID 기반 여행기 작성 처리
+- 체크리스트 항목 추가/수정/삭제 API 완전 연동
+- 공용 체크리스트 공유 링크 기능 구현
+- 알림 기능 백엔드 연동
+- 게시글 검색 기능 고도화
+- 인기/최신/태그별 필터링 기능 추가
+- 지도 현재 위치 기반 검색 기능 추가
+- 여행기 이미지 드래그 앤 드롭 업로드 개선
+- 반응형 UI 디테일 개선
+- API 에러 처리 공통화
+- 로딩/스켈레톤 UI 적용
+- 배포 환경 설정 및 CI/CD 구성
