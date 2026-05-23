@@ -419,6 +419,7 @@ export async function addChecklistItem(
 - 여행 준비 협업 기능으로 확장 가능
 
 ## 📁 **프로젝트 구조**
+
 ```
 src
 ├── api
